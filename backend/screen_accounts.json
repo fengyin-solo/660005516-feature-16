@@ -1,0 +1,27 @@
+{
+  "accounts": [
+    {
+      "username": "screen",
+      "password": "screen123",
+      "screen": {
+        "enabled": true,
+        "decimals": 2
+      }
+    },
+    {
+      "username": "viewer",
+      "password": "viewer456",
+      "screen": {
+        "enabled": true,
+        "decimals": 3
+      }
+    },
+    {
+      "username": "trader",
+      "password": "trader789",
+      "screen": {
+        "enabled": false
+      }
+    }
+  ]
+}

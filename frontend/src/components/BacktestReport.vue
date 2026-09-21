@@ -1,21 +1,21 @@
 <template>
-  <div class="panel" v-if="store.gridResult">
+  <div class="panel" v-if="result">
     <h4>📋 回测报告</h4>
     <div class="metric-grid">
       <div class="metric">
-        <div class="m-val" :class="store.gridResult.totalProfit>=0?'profit':'loss'">¥{{ store.gridResult.totalProfit.toFixed(0) }}</div>
+        <div class="m-val" :class="result.totalProfit>=0?'profit':'loss'">¥{{ result.totalProfit.toFixed(0) }}</div>
         <div class="m-label">总盈亏</div>
       </div>
-      <div class="metric"><div class="m-val" :class="store.gridResult.returnRate>=0?'profit':'loss'">{{ store.gridResult.returnRate.toFixed(2) }}%</div><div class="m-label">收益率</div></div>
-      <div class="metric"><div class="m-val">{{ store.gridResult.sharpeRatio.toFixed(2) }}</div><div class="m-label">夏普比率</div></div>
-      <div class="metric"><div class="m-val loss">{{ store.gridResult.maxDrawdown.toFixed(2) }}%</div><div class="m-label">最大回撤</div></div>
-      <div class="metric"><div class="m-val">{{ store.gridResult.winRate.toFixed(1) }}%</div><div class="m-label">胜率</div></div>
-      <div class="metric"><div class="m-val">{{ store.gridResult.orders.filter(o=>o.side==='SELL').length }}</div><div class="m-label">成交笔数</div></div>
+      <div class="metric"><div class="m-val" :class="result.returnRate>=0?'profit':'loss'">{{ result.returnRate.toFixed(2) }}%</div><div class="m-label">收益率</div></div>
+      <div class="metric"><div class="m-val">{{ result.sharpeRatio.toFixed(2) }}</div><div class="m-label">夏普比率</div></div>
+      <div class="metric"><div class="m-val loss">{{ result.maxDrawdown.toFixed(2) }}%</div><div class="m-label">最大回撤</div></div>
+      <div class="metric"><div class="m-val">{{ result.winRate.toFixed(1) }}%</div><div class="m-label">胜率</div></div>
+      <div class="metric"><div class="m-val">{{ result.orders.filter(o=>o.side==='SELL').length }}</div><div class="m-label">成交笔数</div></div>
     </div>
     <div ref="eqChart" class="chart"></div>
-    <div class="order-list" v-if="store.gridResult.orders.length">
+    <div class="order-list" v-if="result.orders.length">
       <div class="section-title">最近成交</div>
-      <div v-for="o in store.gridResult.orders.slice(-8).reverse()" :key="o.id" class="order-row" :class="o.side">
+      <div v-for="o in result.orders.slice(-8).reverse()" :key="o.id" class="order-row" :class="o.side">
         <span class="o-side">{{ o.side }}</span>
         <span class="o-price">@¥{{ o.price }}</span>
         <span class="o-qty">{{ o.quantity.toFixed(2) }}</span>
@@ -26,14 +26,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onUnmounted, computed } from 'vue'
 import * as echarts from 'echarts'
 import { useTradingStore } from '../store/trading'
-const store = useTradingStore(); const eqChart = ref<HTMLDivElement>(); let inst: echarts.ECharts|null=null
+import type { GridResult } from '@/types'
+const props = defineProps<{ result?: GridResult | null }>()
+const store = useTradingStore()
+const result = computed(() => props.result ?? store.gridResult)
+const eqChart = ref<HTMLDivElement>(); let inst: echarts.ECharts|null=null
 
 function updateEq() {
-  if (!inst||!store.gridResult) return
-  const eq = store.gridResult.equityCurve
+  if (!result.value) return
+  if (!inst && eqChart.value) inst = echarts.init(eqChart.value)
+  if (!inst) return
+  const eq = result.value.equityCurve
   inst.setOption({
     backgroundColor:'transparent',grid:{left:45,right:10,top:5,bottom:20},
     xAxis:{type:'category',data:eq.map((_,i)=>i),show:false},
@@ -43,7 +49,7 @@ function updateEq() {
     }],animation:false
   })
 }
-watch(()=>store.gridResult,(r)=>{if(r) setTimeout(updateEq,50)})
+watch(result,(r)=>{if(r) setTimeout(updateEq,50)},{immediate:true})
 onUnmounted(()=>inst?.dispose())
 </script>
 

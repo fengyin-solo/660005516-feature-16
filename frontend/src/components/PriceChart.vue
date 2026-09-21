@@ -1,14 +1,18 @@
 <template>
-  <div class="panel" style="margin-top:12px"><h4>📈 实时价格 + K线</h4><div ref="chart" class="chart"></div></div>
+  <div class="panel" style="margin-top:12px"><h4>📈 实时价格 + K线</h4><div ref="chart" class="chart" :style="{ height: height + 'px' }"></div></div>
 </template>
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import { useTradingStore } from '../store/trading'
+import type { Tick } from '@/types'
+const props = withDefaults(defineProps<{ ticksData?: Tick[] | null; height?: number }>(), {
+  ticksData: null, height: 300,
+})
 const store = useTradingStore(); const chart = ref<HTMLDivElement>(); let inst: echarts.ECharts|null=null
 function update() {
   if (!inst) return
-  const ticks = store.ticks
+  const ticks = props.ticksData ?? store.ticks
   inst.setOption({
     backgroundColor:'transparent',grid:{left:50,right:15,top:10,bottom:25},
     xAxis:{type:'category',data:ticks.map(t=>t.time),axisLabel:{color:'#94a3b8',fontSize:9}},
@@ -20,7 +24,7 @@ function update() {
   })
 }
 onMounted(()=>{if(chart.value){inst=echarts.init(chart.value);update()}})
-watch(()=>store.ticks,update,{deep:true})
+watch(()=>[props.ticksData, store.ticks],update,{deep:true})
 onUnmounted(()=>inst?.dispose())
 </script>
 <style scoped>.panel{background:#0f1535;border-radius:8px;padding:12px;border:1px solid #1e2a5a}.panel h4{color:#4fc3f7;font-size:13px;margin-bottom:4px}.chart{width:100%;height:300px}</style>
